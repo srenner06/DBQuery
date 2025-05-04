@@ -1,114 +1,24 @@
 ﻿using System.Data.Common;
 using DBQuery.Compilers;
+using DBQuery.QueryVals;
 
 namespace DBQuery.QueryBuilders;
 
-public class UpdateQueryBuilder(QueryCompiler compiler) : BaseQueryBuilder<UpdateQueryBuilder>(compiler), IUpdate, IWhere
+public class UpdateQueryBuilder(QueryCompiler compiler) : ConditionalQueryBuilder<UpdateQueryBuilder>(compiler), IUpdate<UpdateQueryBuilder>, IJoin<UpdateQueryBuilder>
 {
-    protected FilterGroup _filterGroups = new();
     protected Dictionary<string, QueryVal> _updates = new(StringComparer.InvariantCultureIgnoreCase);
+    protected List<Join> _joins = [];
 
-    private bool _addToCurrentGroup;
+    public Join[] GetJoins() => [.. _joins];
+
+    public UpdateQueryBuilder Join(string tableToJoin, JoinType type, string leftTable, string leftValue, string rightTable, string rightValue)
+    {
+        var join = new Join(tableToJoin, type, leftTable, leftValue, rightTable, rightValue);
+        _joins.Add(join);
+        return this;
+    }
 
     public Dictionary<string, QueryVal> GetUpdates() => new(_updates);
-    IUpdate IUpdate.AddUpdate(string col, QueryVal val) => AddUpdate(col, val);
-
-    IUpdate IUpdate.AddUpdateAsParameter<ParamType>(string col, string val, string paramname, out ParamType param)
-        => AddUpdateAsParameter(col, val, paramname, out param);
-
-    IUpdate IUpdate.SetUpdates(params (string col, QueryVal val)[] vals) => SetUpdates(vals);
-
-    public FilterGroup GetFilters()
-    {
-        var filter = _filterGroups;
-        while (filter.Filters is null && filter.Next is not null)
-            filter = filter.Next!.Value.Item2;
-        return filter;
-    }
-
-    IWhere IWhere.ResetFilter() => ResetFilter();
-
-    IWhere IWhere.AddFilterAsParameter<ParamType>(string col, string val, string paramname, out ParamType param,
-        LogicalOperation logicalOperation, string op)
-        => AddFilterAsParameter(col, val, paramname, out param, logicalOperation, op);
-
-    IWhere IWhere.AddFilter(string col, QueryVal val, LogicalOperation logicalOperation, string op)
-        => AddFilter(col, val, logicalOperation, op);
-
-    IWhere IWhere.StartGroup(LogicalOperation logicalOperation) => StartGroup(logicalOperation);
-    IWhere IWhere.EndGroup() => EndGroup();
-
-    public UpdateQueryBuilder ResetFilter()
-    {
-        _filterGroups = new FilterGroup();
-        _addToCurrentGroup = false;
-        return this;
-    }
-
-    public UpdateQueryBuilder And(string col, QueryVal val, string op = "=")
-        => AddFilter(col, val, LogicalOperation.And, op);
-
-    public UpdateQueryBuilder Or(string col, QueryVal val, string op = "=")
-        => AddFilter(col, val, LogicalOperation.Or, op);
-
-    public UpdateQueryBuilder AddFilter(string col, QueryVal val,
-        LogicalOperation logicalOperation = LogicalOperation.And, string op = "=")
-    {
-        if (string.IsNullOrWhiteSpace(col))
-            return this;
-
-        var newFilter = new Filter(col, val, op);
-
-        if (_addToCurrentGroup)
-        {
-            var lastGroup = _filterGroups.GetLast();
-            if (lastGroup.Filters is null)
-                lastGroup.Filters = newFilter;
-            else
-            {
-                var last = lastGroup.Filters.GetLast();
-                last.Next = (logicalOperation, newFilter);
-            }
-        }
-        else
-        {
-            var newgroup = new FilterGroup
-            {
-                Filters = newFilter
-            };
-            _filterGroups.Next = (logicalOperation, newgroup);
-        }
-
-        return this;
-    }
-
-    public UpdateQueryBuilder AddFilterAsParameter<T>(string col, string val, string paramName, out T param,
-        LogicalOperation logicalOperation = LogicalOperation.And, string op = "=") where T : DbParameter, new()
-    {
-        param = new T();
-        if (string.IsNullOrWhiteSpace(col))
-            return this;
-
-        param.ParameterName = paramName;
-        param.Value = val;
-
-        AddFilter(col, param, logicalOperation, op);
-
-        return this;
-    }
-
-    public UpdateQueryBuilder StartGroup(LogicalOperation logicalOperation = LogicalOperation.And)
-    {
-        _filterGroups.GetLast().Next = (logicalOperation, new FilterGroup());
-        _addToCurrentGroup = true;
-        return this;
-    }
-
-    public UpdateQueryBuilder EndGroup()
-    {
-        _addToCurrentGroup = false;
-        return this;
-    }
 
     public UpdateQueryBuilder AddUpdate(string col, QueryVal val)
     {

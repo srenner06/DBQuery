@@ -1,85 +1,91 @@
 ﻿using System.Data.Common;
 using DBQuery.QueryBuilders;
+using DBQuery.QueryVals;
 
 namespace DBQuery;
 
-public interface ITable
+public interface ITable<T> where T : ITable<T>
 {
-    public ITable SetTable(string name);
+    public T SetTable(string name);
     internal string GetTable();
-    //TODO sr: joins
 }
 
-public interface IColumn
+public interface IJoin<T> where T : IJoin<T>
 {
-    public IColumn SetColumns(params string[] columns);
-    public IColumn AddColumns(params string[] columns);
-    public string[] GetColumns();
+    public T Join(string tableToJoin, JoinType type, string leftTable, string leftValue, string rightTable, string rightValue);
+    internal Join[] GetJoins();
 }
 
-public interface ICalculatedColumn : IColumn
+public interface IColumn<T> where T : IColumn<T>
 {
-    public ICalculatedColumn SetCalculatedColumns(params string[] columns);
-    public ICalculatedColumn AddCalculatedColumns(params string[] columns);
+    public T SetColumns(params string[] columns);
+    public T AddColumns(params string[] columns);
+    internal string[] GetColumns();
+}
+
+public interface ICalculatedColumn<T> : IColumn<T> where T : ICalculatedColumn<T>
+{
+    public T SetCalculatedColumns(params string[] columns);
+    public T AddCalculatedColumns(params string[] columns);
     internal string[] GetCalculatedColumns();
 }
 
-public interface IWhere
+public interface IWhere<T> where T : IWhere<T>
 {
-    public IWhere ResetFilter();
-    public IWhere StartGroup(LogicalOperation operation);
-    public IWhere EndGroup();
+    public T ResetFilter();
+    public T StartGroup(LogicalOperator operation);
+    public T EndGroup();
 
-    public IWhere AddFilterAsParameter<ParamType>(string col, string val, string paramname, out ParamType param,
-        LogicalOperation logicalOperation = LogicalOperation.And, string op = "=") where ParamType : DbParameter, new();
+    //TODO sr: Brauchts das noch mit ToCommand() ???
+    public T AddFilterAsParameter<ParamType>(string col, string val, string paramname, out ParamType param,
+        LogicalOperator logicalOperation = LogicalOperator.And, ValueOperator valueOperator = ValueOperator.Equals) where ParamType : DbParameter, new();
 
-    public IWhere AddFilter(string col, QueryVal val, LogicalOperation logicalOperation = LogicalOperation.And,
-        string op = "=");
+    public T AddFilter(string col, QueryVal val, LogicalOperator logicalOperation = LogicalOperator.And, ValueOperator valueOperator = ValueOperator.Equals, string? table = null);
 
-    internal FilterGroup GetFilters();
+    internal ConditionGroup? GetFilters();
 }
 
-public interface IGroup
+public interface IGroup<T> where T : IGroup<T>
 {
-    public IGroup SetGroups(params string[] groups);
-    public IGroup AddGroups(params string[] groups);
+    public T SetGroups(params string[] groups);
+    public T AddGroups(params string[] groups);
     internal string[] GetGroups();
 }
 
-public interface IOrder
+public interface IOrder<T> where T : IOrder<T>
 {
-    public IOrder AddOrder(string col, bool ascending);
+    public T AddOrder(string col, bool ascending);
     internal Dictionary<string, bool> GetOrders();
 }
 
-public interface ILimit
+public interface ILimit<T> where T : ILimit<T>
 {
-    public ILimit SetLimit(ulong? limit);
-    public ulong? GetLimit();
+    public T SetLimit(ulong? limit);
+    internal ulong? GetLimit();
 }
 
-public interface IOffset
+public interface IOffset<T> where T : IOffset<T>
 {
-    public IOffset SetOffset(ulong? offset);
-    public ulong? GetOffset();
+    public T SetOffset(ulong? offset);
+    internal ulong? GetOffset();
 }
 
-public interface IUpdate
+public interface IUpdate<T> where T : IUpdate<T>
 {
-    public IUpdate AddUpdate(string col, QueryVal val);
+    public T AddUpdate(string col, QueryVal val);
 
-    public IUpdate AddUpdateAsParameter<ParamType>(string col, string val, string paramname, out ParamType param)
+    public T AddUpdateAsParameter<ParamType>(string col, string val, string paramname, out ParamType param)
         where ParamType : DbParameter, new();
 
-    public IUpdate SetUpdates(params (string col, QueryVal val)[] vals);
-    public Dictionary<string, QueryVal> GetUpdates();
+    public T SetUpdates(params (string col, QueryVal val)[] vals);
+    internal Dictionary<string, QueryVal> GetUpdates();
 }
 
-public interface IInsert
+public interface IInsert<T> where T : IInsert<T>
 {
     public bool HasRows { get; }
-    public IInsert SetRows(params QueryVal[][] rows);
-    public IInsert AddRows(params QueryVal[][] rows);
-    public IInsert AddRow(params QueryVal[] row);
-    public QueryVal[][] GetRows();
+    public T SetRows(params QueryVal[][] rows);
+    public T AddRows(params QueryVal[][] rows);
+    public T AddRow(params QueryVal[] row);
+    internal QueryVal[][] GetRows();
 }

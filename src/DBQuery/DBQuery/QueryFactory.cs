@@ -4,12 +4,20 @@ using DBQuery.QueryBuilders;
 
 namespace DBQuery;
 
-public class QueryFactory(QueryCompiler compiler)
+public class QueryFactory
 {
-    public SelectQueryBuilder Select(string table = "") => new SelectQueryBuilder(compiler).SetTable(table);
-    public InsertQueryBuilder Insert(string table = "") => new InsertQueryBuilder(compiler).SetTable(table);
-    public UpdateQueryBuilder Update(string table = "") => new UpdateQueryBuilder(compiler).SetTable(table);
-    public DeleteQueryBuilder Delete(string table = "") => new DeleteQueryBuilder(compiler).SetTable(table);
+    private readonly QueryCompiler Compiler;
+
+    public QueryFactory(QueryCompiler compiler)
+    {
+        ArgumentNullException.ThrowIfNull(compiler);
+        Compiler = compiler;
+    }
+
+    public SelectQueryBuilder Select(string table = "") => new SelectQueryBuilder(Compiler).SetTable(table);
+    public InsertQueryBuilder Insert(string table = "") => new InsertQueryBuilder(Compiler).SetTable(table);
+    public UpdateQueryBuilder Update(string table = "") => new UpdateQueryBuilder(Compiler).SetTable(table);
+    public DeleteQueryBuilder Delete(string table = "") => new DeleteQueryBuilder(Compiler).SetTable(table);
 
     public enum SupportedDBTypes
     {

@@ -1,13 +1,12 @@
 ﻿using System.Data.Common;
 using DBQuery.Compilers;
+using DBQuery.QueryVals;
 
 namespace DBQuery.QueryBuilders;
 
-public abstract class BaseQueryBuilder<T>(QueryCompiler compiler) : ITable where T : BaseQueryBuilder<T>
+public abstract class BaseQueryBuilder<T>(QueryCompiler compiler) : ITable<T> where T : BaseQueryBuilder<T>
 {
     protected string _tableName = "";
-
-    ITable ITable.SetTable(string name) => SetTable(name);
 
     public string GetTable() => _tableName;
 
@@ -29,39 +28,56 @@ public abstract class BaseQueryBuilder<T>(QueryCompiler compiler) : ITable where
     public DbCommand ToCommand() => compiler.ToCommand((T)this);
 }
 
+public enum JoinType
+{
+    Left,
+    Right,
+    Inner,
+    FullOuter,
+    Full,
+    Cross
+}
+public class Join(string tableToJoin, JoinType type, string leftTable, string leftColumn, string rightTable, string rightColumn)
+{
+    public string TableToJoin = tableToJoin;
+    public JoinType Type = type;
+    public string LeftTable = leftTable;
+    public string LeftColumn = leftColumn;
+    public string RightTable = rightTable;
+    public string RightColumn = rightColumn;
+    public ValueOperator Operator;
+}
 
-public enum LogicalOperation
+public enum LogicalOperator
 {
     And,
     Or
 }
-
-public class Filter(string col, QueryVal val, string op = "=")
+public enum ValueOperator
 {
-    public string Col = col.Trim();
-    public (LogicalOperation op, Filter)? Next;
-    public string Operation = op.Trim();
-    public QueryVal Val = val;
-
-    public Filter GetLast()
-    {
-        var last = this;
-        while (last.Next.HasValue)
-            last = last.Next.Value.Item2;
-        return last;
-    }
+    Equals,
+    NotEquals,
+    Greater,
+    Smaller,
+    GreaterEquals,
+    SmallerEquals,
+    Like,
+    In,
+    NotIn,
+    Between
 }
 
-public class FilterGroup
+public interface ICondition { }
+public class FilterCondition(string column, QueryVal value, ValueOperator op, string? table = null) : ICondition
 {
-    public Filter? Filters;
-    public (LogicalOperation op, FilterGroup)? Next;
+    public string Column = column;
+    public QueryVal Value = value;
+    public ValueOperator Operator = op;
+    public string? Table = table;
+}
 
-    public FilterGroup GetLast()
-    {
-        var last = this;
-        while (last.Next.HasValue)
-            last = last.Next.Value.Item2;
-        return last;
-    }
+public class ConditionGroup(LogicalOperator op) : ICondition
+{
+    public LogicalOperator Operator = op;
+    public List<ICondition> Conditions = [];
 }

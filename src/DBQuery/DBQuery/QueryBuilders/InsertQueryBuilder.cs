@@ -1,21 +1,16 @@
 ﻿using DBQuery.Compilers;
+using DBQuery.QueryVals;
 
 namespace DBQuery.QueryBuilders;
 
-public class InsertQueryBuilder(QueryCompiler compiler) : BaseQueryBuilder<InsertQueryBuilder>(compiler), IInsert, IColumn
+public class InsertQueryBuilder(QueryCompiler compiler) : BaseQueryBuilder<InsertQueryBuilder>(compiler), IInsert<InsertQueryBuilder>, IColumn<InsertQueryBuilder>
 {
     protected HashSet<string> _columns = new(StringComparer.InvariantCultureIgnoreCase);
     protected List<QueryVal[]> _values = [];
 
-    public string[] GetColumns() => _columns.ToArray();
-
-    IColumn IColumn.SetColumns(params string[] columns) => SetColumns(columns);
-    IColumn IColumn.AddColumns(params string[] columns) => AddColumns(columns);
-    public QueryVal[][] GetRows() => _values.ToArray();
+    public string[] GetColumns() => [.. _columns];
+    public QueryVal[][] GetRows() => [.. _values];
     public bool HasRows => _values.Count > 0;
-    IInsert IInsert.SetRows(params QueryVal[][] rows) => SetRows(rows);
-    IInsert IInsert.AddRows(params QueryVal[][] rows) => AddRows(rows);
-    IInsert IInsert.AddRow(params QueryVal[] row) => AddRow(row);
 
     public InsertQueryBuilder SetColumns(params string[] columns)
     {
