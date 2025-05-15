@@ -6,12 +6,13 @@ on:
 
 jobs:
   build:
+    name: Build Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '8.0.x'
       - name: Restore dependencies
         run: dotnet restore
       - name: Build project
