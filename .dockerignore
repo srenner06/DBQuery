@@ -1,0 +1,21 @@
+# Ignore git files
+.git
+.gitignore
+
+# Ignore VS / VS Code files
+.vscode
+*.user
+*.suo
+
+# Ignore build output
+bin/
+obj/
+*.dll
+*.pdb
+
+# Ignore docker files themselves (optional)
+Dockerfile
+docker-compose.yml
+
+# Ignore test files
+test-results/
